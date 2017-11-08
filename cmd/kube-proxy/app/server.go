@@ -76,6 +76,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	// Initialize aws client auth plugin.
+	_ "k8s.io/client-go/plugin/pkg/client/auth/aws"
 )
 
 const (

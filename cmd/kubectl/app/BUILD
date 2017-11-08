@@ -19,6 +19,7 @@ go_library(
         "//pkg/util/logs:go_default_library",
         "//pkg/version/prometheus:go_default_library",
         "//vendor/k8s.io/client-go/plugin/pkg/client/auth:go_default_library",
+        "//vendor/k8s.io/client-go/plugin/pkg/client/auth/aws:go_default_library",
     ],
 )
 

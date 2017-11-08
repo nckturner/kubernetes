@@ -91,6 +91,9 @@ import (
 	"k8s.io/kubernetes/pkg/util/oom"
 	"k8s.io/kubernetes/pkg/util/rlimit"
 	"k8s.io/kubernetes/pkg/version"
+
+	// Initialize aws client auth plugin.
+	_ "k8s.io/client-go/plugin/pkg/client/auth/aws"
 )
 
 const (
