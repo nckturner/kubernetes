@@ -1,0 +1,54 @@
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_library",
+    "go_test",
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "apic.go",
+        "decode.go",
+        "emitterc.go",
+        "encode.go",
+        "parserc.go",
+        "readerc.go",
+        "resolve.go",
+        "scannerc.go",
+        "sorter.go",
+        "writerc.go",
+        "yaml.go",
+        "yamlh.go",
+        "yamlprivateh.go",
+    ],
+    tags = ["automanaged"],
+)
+
+go_test(
+    name = "go_default_xtest",
+    srcs = [
+        "decode_test.go",
+        "encode_test.go",
+        "example_embedded_test.go",
+        "suite_test.go",
+    ],
+    tags = ["automanaged"],
+    deps = ["//vendor/gopkg.in/yaml.v2:go_default_library"],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+)

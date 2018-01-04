@@ -1,0 +1,98 @@
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_library",
+    "go_test",
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "http_request_copy_test.go",
+        "offset_reader_test.go",
+        "request_internal_test.go",
+        "request_resetbody_test.go",
+        "retryer_test.go",
+        "timeout_read_closer_test.go",
+    ],
+    library = ":go_default_library",
+    tags = ["automanaged"],
+    deps = [
+        "//vendor/github.com/aws/aws-sdk-go/aws:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/awserr:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "connection_reset_error.go",
+        "handlers.go",
+        "http_request.go",
+        "offset_reader.go",
+        "request.go",
+        "request_1_8.go",
+        "request_context.go",
+        "request_pagination.go",
+        "retryer.go",
+        "timeout_read_closer.go",
+        "validation.go",
+        "waiter.go",
+    ],
+    tags = ["automanaged"],
+    deps = [
+        "//vendor/github.com/aws/aws-sdk-go/aws:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/awserr:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/awsutil:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/client/metadata:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_xtest",
+    srcs = [
+        "connection_reset_error_test.go",
+        "handlers_test.go",
+        "http_request_retry_test.go",
+        "request_1_6_test.go",
+        "request_1_8_test.go",
+        "request_context_test.go",
+        "request_pagination_test.go",
+        "request_test.go",
+        "timeout_read_closer_benchmark_test.go",
+        "waiter_test.go",
+    ],
+    tags = ["automanaged"],
+    deps = [
+        "//vendor/github.com/aws/aws-sdk-go/aws:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/awserr:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/client:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/client/metadata:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/corehandlers:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/credentials:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/defaults:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/request:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/aws/signer/v4:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/private/protocol/jsonrpc:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/private/protocol/rest:go_default_library",
+        "//vendor/github.com/aws/aws-sdk-go/service/route53:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+)
