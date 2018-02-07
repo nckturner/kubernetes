@@ -241,6 +241,9 @@ func (config *DirectClientConfig) getUserIdentificationPartialConfig(configAuthI
 		mergedConfig.AuthProvider = configAuthInfo.AuthProvider
 		mergedConfig.AuthConfigPersister = persistAuthConfig
 	}
+	if configAuthInfo.Exec != nil {
+		mergedConfig.ExecProvider = configAuthInfo.Exec
+	}
 
 	// if there still isn't enough information to authenticate the user, try prompting
 	if !canIdentifyUser(*mergedConfig) && (fallbackReader != nil) {
