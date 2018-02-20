@@ -294,7 +294,8 @@ func canIdentifyUser(config restclient.Config) bool {
 	return len(config.Username) > 0 ||
 		(len(config.CertFile) > 0 || len(config.CertData) > 0) ||
 		len(config.BearerToken) > 0 ||
-		config.AuthProvider != nil
+		config.AuthProvider != nil ||
+		config.ExecProvider != nil
 }
 
 // Namespace implements ClientConfig
