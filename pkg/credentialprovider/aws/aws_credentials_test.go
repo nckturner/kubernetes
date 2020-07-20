@@ -154,6 +154,10 @@ func TestParseRepoURLFail(t *testing.T) {
 	}
 }
 
+func isAlwaysEC2() bool {
+	return true
+}
+
 func TestECRProvide(t *testing.T) {
 	registry := "123456789012.dkr.ecr.lala-land-1.amazonaws.com"
 	otherRegistries := []string{
@@ -168,7 +172,7 @@ func TestECRProvide(t *testing.T) {
 			password: password,
 			endpoint: registry,
 		},
-	})
+	}, isAlwaysEC2)
 	keyring := &credentialprovider.BasicDockerKeyring{}
 	keyring.Add(p.Provide(image))
 
@@ -213,7 +217,7 @@ func TestECRProvideCached(t *testing.T) {
 			endpoint:          registry,
 			randomizePassword: true,
 		},
-	})
+	}, isAlwaysEC2)
 	image1 := path.Join(registry, "foo/bar")
 	image2 := path.Join(registry, "bar/baz")
 	keyring := &credentialprovider.BasicDockerKeyring{}
@@ -266,7 +270,7 @@ func TestChinaECRProvide(t *testing.T) {
 			password: password,
 			endpoint: registry,
 		},
-	})
+	}, isAlwaysEC2)
 	keyring := &credentialprovider.BasicDockerKeyring{}
 	keyring.Add(p.Provide(image))
 	// Verify that we get the expected username/password combo for
@@ -310,7 +314,7 @@ func TestChinaECRProvideCached(t *testing.T) {
 			endpoint:          registry,
 			randomizePassword: true,
 		},
-	})
+	}, isAlwaysEC2)
 	image := path.Join(registry, "foo/bar")
 	keyring := &credentialprovider.BasicDockerKeyring{}
 	keyring.Add(p.Provide(image))
