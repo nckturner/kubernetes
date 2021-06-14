@@ -112,6 +112,7 @@ controller, and serviceaccounts controller.`,
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			klog.Infof("test 2: %+v", version.Get())
 			verflag.PrintAndExitIfRequested()
 			cliflag.PrintFlags(cmd.Flags())
 
@@ -120,6 +121,7 @@ controller, and serviceaccounts controller.`,
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
 			}
+			klog.Infof("test 3: %+v", version.Get())
 
 			if err := Run(c.Complete(), wait.NeverStop); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -135,6 +137,8 @@ controller, and serviceaccounts controller.`,
 			return nil
 		},
 	}
+
+	klog.Infof("test 1: %+v", version.Get())
 
 	fs := cmd.Flags()
 	namedFlagSets := s.Flags(KnownControllers(), ControllersDisabledByDefault.List())
@@ -171,6 +175,7 @@ func ResyncPeriod(c *config.CompletedConfig) func() time.Duration {
 
 // Run runs the KubeControllerManagerOptions.  This should never exit.
 func Run(c *config.CompletedConfig, stopCh <-chan struct{}) error {
+	klog.Infof("test 4: %+v", version.Get())
 	// To help debugging, immediately log version
 	klog.Infof("Version: %+v", version.Get())
 
