@@ -66,7 +66,7 @@ const (
 // NewCloudControllerManagerCommand creates a *cobra.Command object with default parameters
 // initFuncConstructor is a map of named controller groups (you can start more than one in an init func) paired to their InitFuncConstructor.
 // additionalFlags provides controller specific flags to be included in the complete set of controller manager flags
-func NewCloudControllerManagerCommand(s *options.CloudControllerManagerOptions, cloudInitializer InitCloudFunc, initFuncConstructor map[string]InitFuncConstructor, additionalFlags cliflag.NamedFlagSets, stopCh <-chan struct{}) *cobra.Command {
+func NewCloudControllerManagerCommand(s *options.CloudControllerManagerOptions, cloudInitializer InitCloudFunc, controllerInitializerConstructors map[string]ControllerInitializerConstructor, additionalFlags cliflag.NamedFlagSets, stopCh <-chan struct{}) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "cloud-controller-manager",
 		Long: `The Cloud controller manager is a daemon that embeds
@@ -75,7 +75,7 @@ the cloud specific control loops shipped with Kubernetes.`,
 			verflag.PrintAndExitIfRequested()
 			cliflag.PrintFlags(cmd.Flags())
 
-			c, err := s.Config(ControllerNames(initFuncConstructor), ControllersDisabledByDefault.List())
+			c, err := s.Config(ControllerNames(controllerInitializerConstructors), ControllersDisabledByDefault.List())
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				return err
@@ -83,7 +83,7 @@ the cloud specific control loops shipped with Kubernetes.`,
 
 			completedConfig := c.Complete()
 			cloud := cloudInitializer(completedConfig)
-			controllerInitializers := ConstructControllerInitializers(initFuncConstructor, completedConfig, cloud)
+			controllerInitializers := ConstructControllerInitializers(controllerInitializerConstructors, completedConfig, cloud)
 
 			if err := Run(completedConfig, cloud, controllerInitializers, stopCh); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -102,7 +102,7 @@ the cloud specific control loops shipped with Kubernetes.`,
 	}
 
 	fs := cmd.Flags()
-	namedFlagSets := s.Flags(ControllerNames(initFuncConstructor), ControllersDisabledByDefault.List())
+	namedFlagSets := s.Flags(ControllerNames(controllerInitializerConstructors), ControllersDisabledByDefault.List())
 	verflag.AddFlags(namedFlagSets.FlagSet("global"))
 	globalflag.AddGlobalFlags(namedFlagSets.FlagSet("global"), cmd.Name())
 
@@ -307,11 +307,11 @@ type InitCloudFunc func(config *cloudcontrollerconfig.CompletedConfig) cloudprov
 type InitFunc func(ctx genericcontrollermanager.ControllerContext) (debuggingHandler http.Handler, enabled bool, err error)
 
 // InitFuncConstructor is used to construct InitFunc
-type InitFuncConstructor func(completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc
+type InitFuncConstructor func(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc
 
 // ControllerNames indicate the default controller we are known.
-func ControllerNames(initFuncConstructors map[string]InitFuncConstructor) []string {
-	ret := sets.StringKeySet(initFuncConstructors)
+func ControllerNames(controllerInitializerConstructors map[string]ControllerInitializerConstructor) []string {
+	ret := sets.StringKeySet(controllerInitializerConstructors)
 	return ret.List()
 }
 
@@ -320,48 +320,65 @@ var ControllersDisabledByDefault = sets.NewString()
 
 // ConstructControllerInitializers is a private map of named controller groups (you can start more than one in an init func)
 // paired to their InitFunc.  This allows for structured downstream composition and subdivision.
-func ConstructControllerInitializers(initFuncConstructors map[string]InitFuncConstructor, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) map[string]InitFunc {
+func ConstructControllerInitializers(controllerInitializerConstructors map[string]ControllerInitializerConstructor, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) map[string]InitFunc {
 	controllers := map[string]InitFunc{}
-	for name, constructor := range initFuncConstructors {
-		controllers[name] = constructor(completedConfig, cloud)
+	for name, constructor := range controllerInitializerConstructors {
+		controllers[name] = constructor.Constructor(constructor.ClientName, completedConfig, cloud)
 	}
 	return controllers
 }
 
+type ControllerInitializerConstructor struct {
+	ClientName  string
+	Constructor InitFuncConstructor
+}
+
 // StartCloudNodeControllerWrapper is used to take cloud cofig as input and start cloud node controller
-func StartCloudNodeControllerWrapper(completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+func StartCloudNodeControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startCloudNodeController(completedConfig, cloud, ctx.Stop)
+		return startCloudNodeController(clientName, completedConfig, cloud, ctx.Stop)
 	}
 }
 
-// startCloudNodeLifecycleControllerWrapper is used to take cloud cofig as input and start cloud node lifecycle controller
-func startCloudNodeLifecycleControllerWrapper(completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+// StartCloudNodeLifecycleControllerWrapper is used to take cloud cofig as input and start cloud node lifecycle controller
+func StartCloudNodeLifecycleControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startCloudNodeLifecycleController(completedConfig, cloud, ctx.Stop)
+		return startCloudNodeLifecycleController(clientName, completedConfig, cloud, ctx.Stop)
 	}
 }
 
-// startServiceControllerWrapper is used to take cloud cofig as input and start service controller
-func startServiceControllerWrapper(completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+// StartServiceControllerWrapper is used to take cloud cofig as input and start service controller
+func StartServiceControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startServiceController(completedConfig, cloud, ctx.Stop)
+		return startServiceController(clientName, completedConfig, cloud, ctx.Stop)
 	}
 }
 
-// startRouteControllerWrapper is used to take cloud cofig as input and start route controller
-func startRouteControllerWrapper(completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+// StartRouteControllerWrapper is used to take cloud cofig as input and start route controller
+func StartRouteControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startRouteController(completedConfig, cloud, ctx.Stop)
+		return startRouteController(clientName, completedConfig, cloud, ctx.Stop)
 	}
 }
 
 // DefaultInitFuncConstructors is a map of default named controller groups paired with InitFuncConstructor
-var DefaultInitFuncConstructors = map[string]InitFuncConstructor{
-	"cloud-node":           StartCloudNodeControllerWrapper,
-	"cloud-node-lifecycle": startCloudNodeLifecycleControllerWrapper,
-	"service":              startServiceControllerWrapper,
-	"route":                startRouteControllerWrapper,
+var DefaultInitFuncConstructors = map[string]ControllerInitializerConstructor{
+	"cloud-node": {
+		ClientName:  "node-controller",
+		Constructor: StartCloudNodeControllerWrapper,
+	},
+	"cloud-node-lifecycle": {
+		ClientName:  "node-controller",
+		Constructor: StartCloudNodeLifecycleControllerWrapper,
+	},
+	"service": {
+		ClientName:  "service-controller",
+		Constructor: StartServiceControllerWrapper,
+	},
+	"route": {
+		ClientName:  "route-controller",
+		Constructor: StartRouteControllerWrapper,
+	},
 }
 
 // CreateControllerContext creates a context struct containing references to resources needed by the
