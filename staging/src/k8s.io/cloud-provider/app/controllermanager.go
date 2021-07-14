@@ -363,6 +363,9 @@ func StartRouteControllerWrapper(clientName string, completedConfig *cloudcontro
 
 // DefaultInitFuncConstructors is a map of default named controller groups paired with InitFuncConstructor
 var DefaultInitFuncConstructors = map[string]ControllerInitializerConstructor{
+	// The cloud-node controller shares the "node-controller" identity with the cloud-node-lifecycle
+	// controller for historical reasons.  See
+	// https://github.com/kubernetes/kubernetes/pull/72764#issuecomment-453300990 for more context.
 	"cloud-node": {
 		ClientName:  "node-controller",
 		Constructor: StartCloudNodeControllerWrapper,
