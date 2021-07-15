@@ -307,7 +307,7 @@ type InitCloudFunc func(config *cloudcontrollerconfig.CompletedConfig) cloudprov
 type InitFunc func(ctx genericcontrollermanager.ControllerContext) (debuggingHandler http.Handler, enabled bool, err error)
 
 // InitFuncConstructor is used to construct InitFunc
-type InitFuncConstructor func(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc
+type InitFuncConstructor func(initcontext ControllerInitializerContext, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc
 
 // ControllerNames indicate the default controller we are known.
 func ControllerNames(controllerInitializerConstructors map[string]ControllerInitializerConstructor) []string {
@@ -323,41 +323,45 @@ var ControllersDisabledByDefault = sets.NewString()
 func ConstructControllerInitializers(controllerInitializerConstructors map[string]ControllerInitializerConstructor, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) map[string]InitFunc {
 	controllers := map[string]InitFunc{}
 	for name, constructor := range controllerInitializerConstructors {
-		controllers[name] = constructor.Constructor(constructor.ClientName, completedConfig, cloud)
+		controllers[name] = constructor.Constructor(constructor.InitContext, completedConfig, cloud)
 	}
 	return controllers
 }
 
 type ControllerInitializerConstructor struct {
-	ClientName  string
+	InitContext ControllerInitializerContext
 	Constructor InitFuncConstructor
 }
 
+type ControllerInitializerContext struct {
+	ClientName string
+}
+
 // StartCloudNodeControllerWrapper is used to take cloud cofig as input and start cloud node controller
-func StartCloudNodeControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+func StartCloudNodeControllerWrapper(initContext ControllerInitializerContext, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startCloudNodeController(clientName, completedConfig, cloud, ctx.Stop)
+		return startCloudNodeController(initContext, completedConfig, cloud, ctx.Stop)
 	}
 }
 
 // StartCloudNodeLifecycleControllerWrapper is used to take cloud cofig as input and start cloud node lifecycle controller
-func StartCloudNodeLifecycleControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+func StartCloudNodeLifecycleControllerWrapper(initContext ControllerInitializerContext, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startCloudNodeLifecycleController(clientName, completedConfig, cloud, ctx.Stop)
+		return startCloudNodeLifecycleController(initContext, completedConfig, cloud, ctx.Stop)
 	}
 }
 
 // StartServiceControllerWrapper is used to take cloud cofig as input and start service controller
-func StartServiceControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+func StartServiceControllerWrapper(initContext ControllerInitializerContext, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startServiceController(clientName, completedConfig, cloud, ctx.Stop)
+		return startServiceController(initContext, completedConfig, cloud, ctx.Stop)
 	}
 }
 
 // StartRouteControllerWrapper is used to take cloud cofig as input and start route controller
-func StartRouteControllerWrapper(clientName string, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
+func StartRouteControllerWrapper(initContext ControllerInitializerContext, completedConfig *cloudcontrollerconfig.CompletedConfig, cloud cloudprovider.Interface) InitFunc {
 	return func(ctx genericcontrollermanager.ControllerContext) (http.Handler, bool, error) {
-		return startRouteController(clientName, completedConfig, cloud, ctx.Stop)
+		return startRouteController(initContext, completedConfig, cloud, ctx.Stop)
 	}
 }
 
@@ -367,19 +371,27 @@ var DefaultInitFuncConstructors = map[string]ControllerInitializerConstructor{
 	// controller for historical reasons.  See
 	// https://github.com/kubernetes/kubernetes/pull/72764#issuecomment-453300990 for more context.
 	"cloud-node": {
-		ClientName:  "node-controller",
+		InitContext: ControllerInitializerContext{
+			ClientName: "node-controller",
+		},
 		Constructor: StartCloudNodeControllerWrapper,
 	},
 	"cloud-node-lifecycle": {
-		ClientName:  "node-controller",
+		InitContext: ControllerInitializerContext{
+			ClientName: "node-controller",
+		},
 		Constructor: StartCloudNodeLifecycleControllerWrapper,
 	},
 	"service": {
-		ClientName:  "service-controller",
+		InitContext: ControllerInitializerContext{
+			ClientName: "service-controller",
+		},
 		Constructor: StartServiceControllerWrapper,
 	},
 	"route": {
-		ClientName:  "route-controller",
+		InitContext: ControllerInitializerContext{
+			ClientName: "route-controller",
+		},
 		Constructor: StartRouteControllerWrapper,
 	},
 }
