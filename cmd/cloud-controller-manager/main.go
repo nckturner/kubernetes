@@ -72,7 +72,9 @@ func main() {
 	controllerInitializers["nodeipam"] = app.ControllerInitializerConstructor{
 		// "node-controller" is the shared identity of all node controllers, including node, node lifecycle, and node ipam.
 		// See https://github.com/kubernetes/kubernetes/pull/72764#issuecomment-453300990 for more context.
-		ClientName:  "node-controller",
+		InitContext: app.ControllerInitializerContext{
+			ClientName: "node-controller",
+		},
 		Constructor: nodeIpamController.startNodeIpamControllerWrapper,
 	}
 
