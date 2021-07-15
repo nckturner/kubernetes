@@ -71,19 +71,19 @@ func main() {
 func controllerInitializers() map[string]app.ControllerInitializerConstructor {
 	controllerInitializers := app.DefaultInitFuncConstructors
 	if constructor, ok := controllerInitializers["cloud-node"]; ok {
-		constructor.ClientName = "mycloud-external-cloud-node-controller"
+		constructor.InitContext.ClientName = "mycloud-external-cloud-node-controller"
 		controllerInitializers["cloud-node"] = constructor
 	}
 	if constructor, ok := controllerInitializers["cloud-node-lifecycle"]; ok {
-		constructor.ClientName = "mycloud-external-cloud-node-lifecycle-controller"
+		constructor.InitContext.ClientName = "mycloud-external-cloud-node-lifecycle-controller"
 		controllerInitializers["cloud-node-lifecycle"] = constructor
 	}
 	if constructor, ok := controllerInitializers["service"]; ok {
-		constructor.ClientName = "mycloud-external-service-controller"
+		constructor.InitContext.ClientName = "mycloud-external-service-controller"
 		controllerInitializers["service"] = constructor
 	}
 	if constructor, ok := controllerInitializers["route"]; ok {
-		constructor.ClientName = "mycloud-external-route-controller"
+		constructor.InitContext.ClientName = "mycloud-external-route-controller"
 		controllerInitializers["route"] = constructor
 	}
 	return controllerInitializers
